@@ -1041,11 +1041,16 @@ return deferred.promise;
 					user: cfg.sql.user,
 					password: cfg.sql.password,
 					database: cfg.sql.database,
-					ssl: cfg.sql.ssl
+					sslmode: cfg.sql.ssl
 				});
 
 				client.connect(function (error) {
 					if (error) {
+						log.error(
+							'Failed to connect to SQL database for secret token handling. Falling back to normal user management.',
+							'; error message:', error.toString(),
+							'; clientIP:', wsConnect._socket.remoteAddress
+						);
 						// Error in secretToken handling - tell the webapp to do normal user management
 						sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
 						return;
