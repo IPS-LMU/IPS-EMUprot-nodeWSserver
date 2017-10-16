@@ -1021,7 +1021,7 @@ return deferred.promise;
 	function defaultHandlerGetDoUserManagement(mJSO, wsConnect) {
 		// IF the user did not send a secretToken, we ask them for
 		// username/password. Otherwise, we check the secret token.
-		if (!wsConnect.urlQuery.hasOwnProperty('secretToken')) {
+		if (!Object.prototype.hasOwnProperty.call(wsConnect.urlQuery, 'secretToken')) {
 			sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
 		} else {
 			var secretToken = wsConnect.urlQuery.secretToken;
@@ -1320,7 +1320,7 @@ function defaultHandlerGetBundle(mJSO, wsConnect) {
 
 			// Check whether mJSO.type is valid and call the respective handler
 			if (
-				wsConnect.messageHandlers.hasOwnProperty(mJSO.type)
+				Object.prototype.hasOwnProperty.call(wsConnect.messageHandlers, mJSO.type)
 				&& typeof wsConnect.messageHandlers[mJSO.type] === 'function'
 				) {
 				// Call the event handler but make sure we catch *all* errors
