@@ -516,8 +516,11 @@ if (cfg.ssl) {
 					allTracks.push(sca.ssffTrackName);
 				});
 			}
-			// tracks in twoDimCanvases.twoDimDrawingDefinitions
+			// tracks in twoDimCanvases
 			if (p.twoDimCanvases !== undefined) {
+				if (p.twoDimCanvases.order[0] === 'EPG') {
+					allTracks.push('EPG');
+				}
 				if (p.twoDimCanvases.twoDimDrawingDefinitions !== undefined) {
 					p.twoDimCanvases.twoDimDrawingDefinitions.forEach(function (tddd) {
 						tddd.dots.forEach(function (dot) {
