@@ -17,6 +17,9 @@
         "user": "username",
         "password": "password",
         "database": "database",
-        "ssl": "require"
+        "ssl": {
+            "rejectUnauthorized": true,
+            "ca": "certs/sql_ca.cert"
+        }
     }
 }

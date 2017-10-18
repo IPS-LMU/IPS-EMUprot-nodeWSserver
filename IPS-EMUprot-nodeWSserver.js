@@ -1038,13 +1038,29 @@ return deferred.promise;
 
 			// ask postgres for secretToken
 			try {
+				// read CA certificate for sql connection
+				var ca = null;
+				try {
+					ca = fs.readFileSync(cfg.sql.ssl.ca).toString();
+				} catch (error) {
+					log.error(
+						'Failed to read CA certificate for SQL connection, trying to proceed without',
+						'; path:', cfg.sql.ssl.ca,
+						'; clientIP: ', wsConnect._socket.remoteAddress
+					);
+				}
+
+
 				var client = new pg.Client({
 					host: cfg.sql.host,
 					port: cfg.sql.port,
 					user: cfg.sql.user,
 					password: cfg.sql.password,
 					database: cfg.sql.database,
-					sslmode: cfg.sql.ssl
+					ssl: {
+						rejectUnauthorized: cfg.sql.ssl.rejectUnauthorized,
+						ca: ca
+					}
 				});
 
 				client.connect(function (error) {
