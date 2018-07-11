@@ -19,6 +19,11 @@
  *        "port": 17890, // port you want the websocket server to run on
  *        "ssl_key": "certs/server.key", // path to ssl_key
  *        "ssl_cert": "certs/server.crt", // path to ssl_cert
+ *        "openIdConnect": {
+ *            "openIdProvider": "https://example.com/", // Location of OpenID Provider/issuer
+ *            "clientId": "...", // the client id registered with the open ID provider
+ *            "clientSecret": "...", // the client secret registered with the open ID provider
+ *        },
  *        "use_ldap": true, // true if you want to try to bind to ldap
  *        "ldap_address": "ldaps://ldap.phonetik.uni-muenchen.de:636", // ldap address
  *        "binddn_left": "uid=", // left side of binddn (resulting binddn_left + username + binddn_right)
@@ -46,12 +51,13 @@
 	var exec = require('child_process').exec;
 	var bcrypt = require('bcryptjs');
 	var sqlite3 = require('sqlite3').verbose();
-	var pg = require('pg');
 	var async = require('async');
 	var Q = require('q');
 	var jsonlint = require('jsonlint');
 	var url = require('url');
 	var domain = require('domain');
+	const { Issuer } = require('openid-client');
+	
 	
 	var https = require('https');
 	var JSONLint = require('json-lint');
@@ -86,6 +92,25 @@
 	var usersDB = new sqlite3.Database(cfg.sqlite_db, function () {
 		log.info('finished loading SQLiteDB');
 	});
+
+	// Find openId Connect configuration
+	
+	var openIdClient = null;
+
+	Issuer.discover(cfg.openIdConnect.openIdProvider)
+		.then((openIdIssuer) => {
+			openIdClient = new openIdIssuer.Client({
+				client_id: cfg.openIdConnect.clientId,
+				client_secret: cfg.openIdConnect.clientSecret
+			});
+
+			log.info('Found OpenID Provider configuration ' + openIdClient.toString());
+			console.log(openIdClient);
+		})
+		.catch((error) => {
+			log.error('Did not find OpenID Provider configuration. ' + error.toString());
+		});
+
 
 	////////////////////////////////////////////////
 	// get schema files
@@ -1031,103 +1056,45 @@ return deferred.promise;
 			sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
 		} else {
 			var secretToken = wsConnect.urlQuery.secretToken;
+			openIdClient.userinfo(secretToken)
+				.then((userinfo) => {
+					console.log(userinfo);
+					// Let's know the username
+					const username = userinfo.name; // =???????
 
-			// Validate input
-			let regex = /[a-fA-F0-9]+/;
-			if (!regex.test(secretToken)) {
-				// Error in secretToken handling - tell the webapp to do normal user management
-				sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
-			}
+					authorizeViaBundleList(username, wsConnect).then(
+						function(bundleListInfo) {
+							// mark connection as authorised for the
+							// requested db
+							wsConnect.authorised = true;
+							// add ID to connection object
+							wsConnect.ID = username;
+							// add bndlList to connection object
+							if (cfg.filter_bndlList_for_finishedEditing) {
+								wsConnect.bndlList = filterBndlList(bundleListInfo.parsedData);
+							} else {
+								wsConnect.bndlList = bundleListInfo.parsedData;
+							}
+							wsConnect.bndlListPath = bundleListInfo.path;
 
-			// ask postgres for secretToken
-			try {
-				// read CA certificate for sql connection
-				var ca = null;
-				try {
-					ca = fs.readFileSync(cfg.sql.ssl.ca).toString();
-				} catch (error) {
-					log.error(
-						'Failed to read CA certificate for SQL connection, trying to proceed without',
-						'; path:', cfg.sql.ssl.ca,
-						'; clientIP: ', wsConnect._socket.remoteAddress
-					);
-				}
-
-
-				var client = new pg.Client({
-					host: cfg.sql.host,
-					port: cfg.sql.port,
-					user: cfg.sql.user,
-					password: cfg.sql.password,
-					database: cfg.sql.database,
-					ssl: {
-						rejectUnauthorized: cfg.sql.ssl.rejectUnauthorized,
-						ca: ca
-					}
-				});
-
-				client.connect(function (error) {
-					if (error) {
+							sendMessage(wsConnect, mJSO.callbackID, true, '', 'NO');
+						},
+						function (reason) {
+							// Error in secretToken handling - tell the webapp to do normal user management
+							sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
+						});
+							
+				})
+				.catch((error) => {
 						log.error(
-							'Failed to connect to SQL database for secret token handling. Falling back to normal user management.',
+							'Failed to retrieve user info. Falling back to normal user management.',
 							'; error message:', error.toString(),
 							'; clientIP:', wsConnect._socket.remoteAddress
 						);
 						// Error in secretToken handling - tell the webapp to do normal user management
 						sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
 						return;
-					}
-
-					client.query(
-						"SELECT * FROM authtokens WHERE token = $1 AND" +
-						" validuntil > current_timestamp",
-						[secretToken],
-						function (error, result) {
-							if (error) {
-								// Error in secretToken handling - tell the webapp to do normal user management
-								sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
-								return;
-							}
-
-							client.end();
-
-							if (result.rows.length === 0) {
-								// Error in secretToken handling - tell the webapp to do normal user management
-								sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
-								return;
-							}
-
-							var username = result.rows[0].userid;
-
-							authorizeViaBundleList(username, wsConnect).then(
-								function(bundleListInfo) {
-									// mark connection as authorised for the
-									// requested db
-									wsConnect.authorised = true;
-									// add ID to connection object
-									wsConnect.ID = username;
-									// add bndlList to connection object
-									if (cfg.filter_bndlList_for_finishedEditing) {
-										wsConnect.bndlList = filterBndlList(bundleListInfo.parsedData);
-									} else {
-										wsConnect.bndlList = bundleListInfo.parsedData;
-									}
-									wsConnect.bndlListPath = bundleListInfo.path;
-
-									sendMessage(wsConnect, mJSO.callbackID, true, '', 'NO');
-								},
-								function (reason) {
-									// Error in secretToken handling - tell the webapp to do normal user management
-									sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
-								}
-								);
-						}
-						);
-});
-} catch (error) {
-				// Error in secretToken handling - tell the webapp to do normal user management
-				sendMessage(wsConnect, mJSO.callbackID, true, '', 'YES');
-			}
+				});
 		}
 	}
 

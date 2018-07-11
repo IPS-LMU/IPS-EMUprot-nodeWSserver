@@ -4,7 +4,12 @@
     "port": 17890,
     "ssl_key": "certs/noPwdServer.key",
     "ssl_cert": "certs/server.crt",
-    "use_ldap": true,
+    "openIdConnect": {
+        "openIdProvider": "https://openid.example.com/",
+        "clientId": "...",
+        "clientSecret": "..."
+    },
+    "use_ldap": true, 
     "ldap_address": "ldaps://ldap.phonetik.uni-muenchen.de:636",
     "binddn_left": "uid=",
     "binddn_right": ",ou=People,dc=phonetik,dc=uni-muenchen,dc=de",
