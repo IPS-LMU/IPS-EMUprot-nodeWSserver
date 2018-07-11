@@ -1058,9 +1058,7 @@ return deferred.promise;
 			var secretToken = wsConnect.urlQuery.secretToken;
 			openIdClient.userinfo(secretToken)
 				.then((userinfo) => {
-					console.log(userinfo);
-					// Let's know the username
-					const username = userinfo.name; // =???????
+					const username = userinfo.sub;
 
 					authorizeViaBundleList(username, wsConnect).then(
 						function(bundleListInfo) {
