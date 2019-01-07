@@ -909,6 +909,16 @@ return deferred.promise;
 			'comment': data.comment
 		}).then(function () {
 			// save annotation
+
+                        // check if the databse config has a track named FORMANTS
+                        var foundFormantsDef = false;
+                        var formantsFileExtension;
+                        for (var i = 0; i < wsConnect.dbConfig.ssffTrackDefinitions.length; i++) {
+                                if (wsConnect.dbConfig.ssffTrackDefinitions[i].name === 'FORMANTS') {
+                                        foundFormantsDef = true;
+                                        formantsFileExtension = wsConnect.dbConfig.ssffTrackDefinitions[i].fileExtension;
+                                }
+                        }
 			var annotJSONpath = path.join(
 				sessionPath,
 				bundleName + '_bndl',
@@ -917,7 +927,7 @@ return deferred.promise;
 			var fmsPath = path.join(
 				sessionPath,
 				bundleName + '_bndl',
-				path.normalize(bundleName + '.fms')
+				path.normalize(bundleName + '.' + formantsFileExtension)
 				);
 
 			fs.writeFile(annotJSONpath, JSON.stringify(data.annotation, undefined, 2), function (err) {
@@ -925,13 +935,6 @@ return deferred.promise;
 					deferred.reject('Error writing annotation ' + err);
 				} else {
 					// save FORMANTS track (if defined for DB)
-					var foundFormantsDef = false;
-					for (var i = 0; i < wsConnect.dbConfig.ssffTrackDefinitions.length; i++) {
-						if (wsConnect.dbConfig.ssffTrackDefinitions[i].name === 'FORMANTS') {
-							foundFormantsDef = true;
-						}
-					}
-
 					if (foundFormantsDef) {
 						// write SSFF stored in data.ssffFiles[0] back to
 						// file (expects FORMANTS files to have .fms as extentions)
