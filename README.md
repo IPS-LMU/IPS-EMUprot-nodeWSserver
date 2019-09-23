@@ -1,10 +1,13 @@
 # IPS-EMUprot-nodeWSserver.js
 
 
-## Quick start
+## Quick start (not meant for prod. use!)
+
 * `npm install`
 * `node IPS-EMUprot-nodeWSserver.js server_config.json | node_modules/bunyan/bin/bunyan`
-
+* go to https://ips-lmu.github.io/EMU-webApp/?autoConnect=true&serverUrl=ws:%2F%2Flocalhost:17890/ae (not the rel. )
+* login as `testuser` with password `1234` (user details saved in `IPS-EMUprot-nodeWSserver.DB`. For more information see `manageSQLiteDB.js`.)
+* the bundles specified in `emuDBs/ae_emuDB/bundleLists/testuser_bundleList.json` should now be shown in the EMU-webApp
 
 ## JSON validation 
 
@@ -16,13 +19,13 @@ This server also implements a simple validation server to validate JSON files us
 
 Validate \_annot.json file:
 
-`curl -H "Content-Type: applicationjson" --data-binary  @msajc003_annot.json https://webapp2.phonetik.uni-muenchen.de:17890/_annot`
+`curl -H "Content-Type: applicationjson" --data-binary  @msajc003_annot.json http://localhost:17890/_annot`
 
 
 
 Validate \_DBconfig.json file:
 
-`curl -H "Content-Type: applicationjson" --data-binary  @ae_DBconfig.json https://webapp2.phonetik.uni-muenchen.de:17890/_DBconfig`
+`curl -H "Content-Type: applicationjson" --data-binary  @ae_DBconfig.json http://localhost:17890:17890/_DBconfig`
 
 
 ### RCurl

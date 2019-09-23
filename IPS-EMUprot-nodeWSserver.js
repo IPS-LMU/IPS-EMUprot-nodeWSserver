@@ -241,8 +241,9 @@ if (cfg.ssl) {
 	var wss = new WebSocketServer({
 		server: app
 	});
-
-
+	app.on('upgrade', function upgrade(request, socket, head) {
+		console.log("in upgrade:", request.url);
+	})
 	/**
 	 * This function is called by the GETPROTOCOL handler.
 	 * It loads the client-requested and the corresponding plugin.
@@ -255,7 +256,7 @@ if (cfg.ssl) {
 		// Also save any query parameters. WARNING The query parameters are
 		// stored in wsConnect.urlQuery WITHOUT BEING ESCAPED OR VALIDATED.
 		try {
-			var urlParams = parseURL(wsConnect.upgradeReq.url);
+			var urlParams = parseURL(wsConnect.requestUrl);
 		} catch (error) {
 			sendMessage(wsConnect, mJSO.callbackID, false, 'The requested database is not readable');
 			log.info('parseURL failed, closing connection.', 'clientID:', wsConnect.connectionID, '; error:', error);
@@ -618,7 +619,7 @@ if (cfg.ssl) {
 				deferred.reject();
 				return;
 			} else {
-				log.info('found _bndlList.json for user: ', username, ' in: ', wsConnect.upgradeReq.url,
+				log.info('found _bndlList.json for user: ', username, ' in: ', wsConnect.requestUrl,
 					'; clientID:', wsConnect.connectionID,
 					'; clientIP:', wsConnect._socket.remoteAddress);
 
@@ -627,7 +628,7 @@ if (cfg.ssl) {
 				try {
 					parsedData = jsonlint.parse(data);
 				} catch (e) {
-					log.info('failed to parse bundle list for user: ', username, ' in: ', wsConnect.upgradeReq.url,
+					log.info('failed to parse bundle list for user: ', username, ' in: ', wsConnect.requestUrl,
 						'; clientID:', wsConnect.connectionID,
 						'; clientIP:', wsConnect._socket.remoteAddress);
 					deferred.reject();
@@ -1273,15 +1274,17 @@ function defaultHandlerGetBundle(mJSO, wsConnect) {
 	// keep track of clients
 	var clients = [];
 
-	wss.on('connection', function (wsConnect) {
+	wss.on('connection', function (wsConnect, request) {
 		// generate uuid for connection
 		wsConnect.connectionID = generateUUID();
-
+		wsConnect.requestUrl = request.url;
 		// log connection
+		// console.log(request);
+		// console.log(request.connection);
 		log.info('new client connected',
 			'; clientID:', wsConnect.connectionID,
-			'; clientIP:', wsConnect._socket.remoteAddress,
-			'; URL:', wsConnect.upgradeReq.url
+			'; clientIP:', request.connection.remoteAddress,
+			'; URL:', wsConnect.requestUrl
 			);
 
 		// Has the user been authorised to use the database they requested?
