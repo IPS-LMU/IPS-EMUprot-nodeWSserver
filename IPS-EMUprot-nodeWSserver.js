@@ -92,9 +92,9 @@
 	var lastSchemaUpdate;
 	var schemasData = [];
 	var schemaURLs = [
-	'https://raw.githubusercontent.com/IPS-LMU/EMU-webApp/master/app/schemaFiles/annotationFileSchema.json',
-	'https://raw.githubusercontent.com/IPS-LMU/EMU-webApp/master/app/schemaFiles/DBconfigFileSchema.json',
-	'https://raw.githubusercontent.com/IPS-LMU/EMU-webApp/master/app/schemaFiles/emuwebappConfigSchema.json'];
+	'https://raw.githubusercontent.com/IPS-LMU/EMU-webApp/master/src/schemaFiles/annotationFileSchema.json',
+	'https://raw.githubusercontent.com/IPS-LMU/EMU-webApp/master/src/schemaFiles/DBconfigFileSchema.json',
+	'https://raw.githubusercontent.com/IPS-LMU/EMU-webApp/master/src/schemaFiles/emuwebappConfigSchema.json'];
 
 	function updateSchemas(){
 
