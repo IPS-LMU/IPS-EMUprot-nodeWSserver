@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "async": "^1.5.2",
+    "async": "^2.6.4",
     "bcryptjs": "^2.4.3",
     "bunyan": "^1.8.15",
     "https": "^1.0.0",
